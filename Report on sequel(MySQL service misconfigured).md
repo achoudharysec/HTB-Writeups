@@ -1,84 +1,126 @@
-Machine Name : Sequel
-Platform : Hackthebox
-difficulty : Very easy
-target IP : 10.129.105.250
+# Hack The Box - Sequel
 
-- **Machine info:** Sequel is a very easy Linux machine that introduces a vulnerable MySQL service misconfigured to allow access without a password. The machine showcases how to enumerate and interact with the database through SQL queries to extract critical information.
-- [[Report on Appointment(SQL injection)]] 
-### Open Port :
+| Property | Value |
+|----------|-------|
+| **Machine** | Sequel |
+| **Platform** | Hack The Box |
+| **Difficulty** | Very Easy |
+| **Target IP** | `10.129.105.250` |
+| **Operating System** | Linux |
 
-| Port | State | Service | Version                         |
-| ---- | ----- | ------- | ------------------------------- |
-| 3306 | Open  | mysql?  | 5.5.5-10.3.27-MariaDB-0+deb10u1 |
-### Enumeration :
-**nmap :**
-![[Pasted image 20260718174913.png]]
+---
 
-### Exploitation :
+## Objective
 
-- A **remote connection** to the MariaDB service :
-![[Pasted image 20260719213454.png]]
-successfully established using the privileged `root` account without providing a valid password.
+Sequel is a **very easy** Linux machine that demonstrates the risks of exposing a **MariaDB** service with insecure authentication. The objective is to enumerate the database service, authenticate using the misconfigured root account, and retrieve sensitive information stored within the database.
+
+---
+
+## Enumeration
+
+### Nmap Scan
+
+The target was scanned to identify open ports and running services.
+
+<img width="528" height="194" alt="image" src="https://github.com/user-attachments/assets/d64cacf2-c173-494f-820a-7de1612d7f8e" />
+
+
+| Port | State | Service | Version |
+|------|------|---------|---------|
+| 3306 | Open | MariaDB | 10.3.27-MariaDB-0+deb10u1 |
+
+### Analysis
+
+The scan identified a **MariaDB** service exposed on **TCP port 3306**. Since database services should not normally allow unrestricted remote access, authentication was tested using the default administrative account.
+
+---
+
+## Exploitation
+
+### Remote Database Access
+
+Connect to the MariaDB server.
+
+```text
+mysql -h <Target-IP> -u root -p --skip-ssl -A
 ```
-mysql -h 10.129.107.117 -u root -p --skip-ssl -A
-```
 
-- selected htb database using :
-```
+<img width="638" height="425" alt="image" src="https://github.com/user-attachments/assets/4884a929-b63e-40de-a45d-3922eb3db6d9" />
+
+
+A remote connection was successfully established using the privileged **root** account **without providing a valid password**, confirming an insecure database configuration.
+
+---
+
+### Database Enumeration
+
+Select the target database.
+
+```sql
 USE htb;
 ```
 
-- queried config table :
-```
+Query the configuration table.
+
+```sql
 SELECT * FROM config;
 ```
 
-### Risk Severity: Critical
+The query successfully returned sensitive configuration information, including the challenge flag.
 
-> The MariaDB service exposed on TCP port **3306** was configured to permit remote access to the `root` database account without requiring a valid password. This allows an unauthenticated attacker with network access to connect to the database with highly privileged permissions and access sensitive information stored within it.
+---
 
-### Impact
+## Risk Analysis
 
-> Successful exploitation of this misconfiguration allows an unauthorized attacker to access and enumerate the database server. Depending on the privileges assigned to the database account, an attacker may:
-> 
-> - Access sensitive information stored within databases.
-> - Enumerate database structures, tables, and configuration data.
-> - Read application or user information stored in accessible tables.
-> - Modify or delete database records if sufficient privileges are granted.
-> - Disrupt applications that depend on the affected database.
-> - Extract sensitive configuration information or credentials stored within database tables.
-> 
-> During testing, unauthorized access to the `htb` database was successfully demonstrated, and sensitive configuration data, including the challenge flag, was retrieved from the `config` table.
+### Finding: Insecure MariaDB Authentication
 
-This matches the evidence on pages 2–3, where `SELECT * FROM config;` successfully exposes all configuration values.
+**Severity:** Critical
 
-### Root Cause
+**Risk**
 
-> The primary root cause was an insecure MariaDB configuration that allowed the privileged `root` database account to authenticate remotely without a valid password. Additionally, the database service was exposed over the network on TCP port **3306**, allowing an unauthenticated remote user to directly interact with the database server.
+The MariaDB service permitted remote authentication to the privileged **root** account without requiring a valid password, allowing unauthorized users to gain administrative access to the database server.
 
-### Remediation
+**Impact**
 
-> - Configure a strong, unique password for all privileged MariaDB accounts, especially `root`.
-> - Disable remote login for the MariaDB `root` account unless explicitly required.
-> - Create dedicated database users with only the minimum privileges required for their intended purpose.
-> - Restrict TCP port **3306** using firewall rules so that only trusted systems can access the database.
-> - Bind MariaDB to localhost when remote database access is unnecessary.
-> - Regularly audit database accounts, authentication settings, and granted privileges.
-> - Avoid storing sensitive information such as credentials or secrets in unnecessarily accessible database tables.
+- Unauthorized database access
+- Enumeration of databases and tables
+- Disclosure of sensitive configuration data
+- Access to application information
+- Modification or deletion of database records
+- Potential disruption of dependent applications
 
-### Evidence
+---
 
-> The following evidence confirms the security misconfiguration:
-> 
-> - Nmap identified **MariaDB 10.3.27** exposed on TCP port **3306**.
-> - A remote connection to MariaDB was successfully established using the privileged `root` account without providing a valid password.
-> - Database enumeration revealed the `htb` database.
-> - The `htb` database contained the `config` and `users` tables.
-> - The `config` table was successfully queried without authorization.
-> - Sensitive configuration information and the challenge flag were successfully retrieved.
+## Root Cause
 
-Your screenshots/query output already demonstrate most of this clearly.
+The MariaDB server was **misconfigured** to allow remote authentication for the **root** account without enforcing a valid password. In addition, the database service was exposed on **TCP port 3306**, making it directly accessible over the network.
 
-### Conclusion
+---
 
-> The target database server was successfully accessed due to an insecure MariaDB configuration that permitted remote authentication to the privileged `root` account without a valid password. This allowed unauthorized enumeration of the database server and access to the `htb` database, from which sensitive configuration information was retrieved. The misconfiguration could expose sensitive application data to unauthorized users and potentially allow modification or deletion of database contents depending on the privileges granted to the compromised account. Restricting remote database access, enforcing strong authentication, and applying the principle of least privilege are required to prevent unauthorized access.
+## Evidence
+
+Successful exploitation was confirmed by:
+
+- Nmap identified **MariaDB 10.3.27** running on **TCP port 3306**.
+- Remote authentication as **root** succeeded without a valid password.
+- The **htb** database was successfully enumerated.
+- The **config** table was queried successfully.
+- Sensitive configuration data, including the challenge flag, was retrieved.
+
+---
+
+## Remediation
+
+- Configure strong, unique passwords for all privileged database accounts.
+- Disable remote login for the **root** account unless explicitly required.
+- Create dedicated database users with the minimum required privileges.
+- Restrict access to **TCP port 3306** using firewall rules.
+- Bind MariaDB to **localhost** when remote access is unnecessary.
+- Regularly audit database users, authentication methods, and granted privileges.
+- Avoid storing sensitive information in publicly accessible database tables.
+
+---
+
+## Conclusion
+
+The **Sequel** machine demonstrates how an insecure **MariaDB** configuration can expose critical database services to unauthorized users. Because the privileged **root** account permitted remote authentication without a valid password, the database could be fully enumerated and sensitive configuration data was retrieved. This machine highlights the importance of enforcing strong authentication, restricting remote database access, and applying the principle of least privilege to database accounts.
