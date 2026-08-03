@@ -1,42 +1,124 @@
-Machine name : Appointment
-Platform : Hackthebox
-difficulty : very easy 
-target IP : 10.129.93.35
-OS : Linux 5.0 - 5.14, MikroTik RouterOS 7.2 - 7.5 (Linux 5.6.3)
+# Hack The Box - Appointment
 
-- Appointment is a very easy Linux machine which showcases beginner SQL Injection techniques against an SQL database enabled web application.
+| Property | Value |
+|----------|-------|
+| **Machine** | Appointment |
+| **Platform** | Hack The Box |
+| **Difficulty** | Very Easy |
+| **Target IP** | `10.129.93.35` |
+| **Operating System** | Linux 5.0–5.14, MikroTik RouterOS 7.2–7.5 (Linux 5.6.3) |
 
-#### Open Ports : 
- -   80 , status : open  , service:  http   ,version: Apache httpd 2.4.38
-![[Pasted image 20260712232803.png]]
+---
 
-#### Exploit : 
-- Go to the http: 
+## Objective
+
+Appointment is a **very easy** Linux machine that demonstrates a basic **SQL Injection (SQLi)** vulnerability in a web application's authentication mechanism. The objective is to exploit the login form to bypass authentication and retrieve the user flag.
+
+---
+
+## Enumeration
+
+### Nmap Scan
+
+The target was scanned to identify open ports and running services.
+
+| Port | State | Service | Version |
+|------|------|---------|---------|
+| 80 | Open | HTTP | Apache httpd 2.4.38 |
+
+<img width="335" height="112" alt="image" src="https://github.com/user-attachments/assets/cd17ee54-518b-45b0-a4a1-56931e56e038" />
+
+### Analysis
+
+Only **port 80** was open, indicating that the attack surface was limited to the web application hosted on the Apache HTTP server.
+
+---
+
+## Exploitation
+
+Navigate to the target web application.
+
+```text
+http://10.129.93.35
 ```
-http://10.129.93.35  or http://10.129.93.35:80
+
+or
+
+```text
+http://10.129.93.35:80
 ```
 
-- As asked in the question (ie.If user input is not handled carefully, it could be interpreted as a **comment**) , so enter the # at the end of the username.
+The challenge hint indicated that improper handling of user input could result in part of the SQL query being interpreted as a **comment**.
+
+Use the following credentials:
+
+```text
+Username: admin'#
+Password: anything
 ```
-Username : admin'# 
-Password : {anything}
+
+<img width="243" height="145" alt="image" src="https://github.com/user-attachments/assets/298c90f5-2239-46ab-a08b-3fdbfadd7971" />
+
+
+### Explanation
+
+The application constructs the SQL query similar to the following:
+
+```php
+$sql = "SELECT * FROM users WHERE username='$username' AND password='$password'";
 ```
-![[Pasted image 20260712234105.png]]
 
-- what it does is that, the **PHP & SQL** using the authentication like :
-`$sql="SELECT * FROM users WHERE username='$username' AND password='$password'";`
-and the (#) is treated as a comment so if we put the username as `admin'#` , rest of the code after the # will be treated as the comment , which is SQL injection.
+When the username is supplied as:
 
-- Flag is captured :
-![[Pasted image 20260712234038.png]]
+```text
+admin'#
+```
 
-#### Risk assessment :
-**Risk severity** : critical
-- The vulnerability allows authentication bypass without valid credentials. An attacker can gain unauthorized access and potentially compromise sensitive data depending on the privileges of the targeted account.
-**Impact:**
-- Reading all files
-- Modifying files
-- Deleting files
+the generated query becomes:
 
-#### Conclusion : 
-The login page was successfully breached through an SQL injection where you can modify the query (the $sql variable) through the log-in form on the web page to make the query do something that is not supposed to do - bypass the log-in altogether!.
+```sql
+SELECT * FROM users WHERE username='admin'#' AND password='anything';
+```
+
+The `#` character starts a **SQL comment**, causing everything after it to be ignored by the database. As a result, the password check is bypassed, allowing authentication as the **admin** user.
+
+---
+
+## Flag Capture
+
+After successfully bypassing authentication, the user flag was displayed.
+
+<img width="486" height="123" alt="image" src="https://github.com/user-attachments/assets/ca40adfb-4237-4f2c-aea6-30d81a15eb1f" />
+
+
+---
+
+## Risk Analysis
+
+### Finding: SQL Injection Authentication Bypass
+
+**Severity:** Critical
+
+**Risk**
+
+Unsanitized user input allows attackers to manipulate SQL queries and bypass the authentication process without valid credentials.
+
+**Impact**
+
+- Authentication bypass
+- Unauthorized access to the application
+- Potential exposure of sensitive information
+- Possibility of further database compromise depending on user privileges
+
+**Remediation**
+
+- Use **prepared statements (parameterized queries)**.
+- Validate and sanitize all user input.
+- Avoid constructing SQL queries through string concatenation.
+- Apply the principle of least privilege to database accounts.
+
+---
+
+## Conclusion
+
+The **Appointment** machine demonstrates how a simple **SQL Injection** vulnerability can completely bypass an application's authentication mechanism. By injecting a SQL comment into the username field, the password validation was ignored, granting unauthorized access to the application. This machine highlights the importance of secure input handling, parameterized queries, and proper database security practices to prevent SQL injection attacks.
