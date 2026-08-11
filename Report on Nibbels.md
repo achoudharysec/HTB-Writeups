@@ -53,6 +53,7 @@ Since the web application was the primary attack surface, further content enumer
 ![](Attachments/Pasted%20image%2020260807143347.png)
 found the `Arbitrary file uplo` in it with remote code execution.
 
+---
 ### Metasploit Module Research:
 
 The corresponding [[../../../../tools/Exploitation/Metasploit]]module was located with a Nibbleblog search.
