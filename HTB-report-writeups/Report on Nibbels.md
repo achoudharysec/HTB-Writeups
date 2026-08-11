@@ -52,12 +52,14 @@ Since the web application was the primary attack surface, further content enumer
 [Searchsploit](../../../../tools/Exploitation/Searchsploit.md) to search the local Exploit Database index for known Nibbleblog vulnerabilities.
 ![](Attachments/Pasted%20image%2020260807143347.png)
 
-found the `Arbitrary file uplo` in it with remote code execution.
+A relevant Nibbleblog vulnerability involving **arbitrary file upload** was identified.
+
+This vulnerability was particularly interesting because arbitrary file upload can potentially lead to remote code execution when executable files can be uploaded and accessed by the web server.
 
 ---
 ### Metasploit Module Research:
 
-The corresponding [[../../../../tools/Exploitation/Metasploit]]module was located with a Nibbleblog search.
+The corresponding [Metasploit](../../tools/Exploitation/Metasploit.md) module was located with a Nibbleblog search.
 
 ![](Attachments/Pasted%20image%2020260807154858.png)
 
@@ -71,9 +73,10 @@ The module information indicated that the upload vulnerability is exploitable by
 
 Therefore, the next objective was to locate the administrative login endpoint and obtain valid credentials.
 
-### Directory / Content Enumeration:
+---
+### Gobuster:
 
-[[../../../../tools/Recon/Gobuster]] was used against the Nibbleblog installation to discover hidden web content.
+ [Gobuster](../../tools/Recon/Gobuster.md) was used against the Nibbleblog installation to discover hidden web content.
 
 The original report used the SecLists common web-content wordlist.
 
@@ -89,7 +92,8 @@ http://10.10.10.75/nibbleblog/admin.php
 
 ![613](Attachments/Pasted%20image%2020260807191416.png)
 
-## 3. Credential Discovery:
+---
+## 4. Credential Discovery:
 
 The discovered `admin.php` endpoint presented a Nibbleblog administration login.
 you can use [Brute force using burp-suit](../../../../Y%20(extra%20notes)/Brute%20force%20using%20burp-suit.md):
@@ -108,13 +112,16 @@ From this information, the report identified:
 Username: admin
 Password: nibbles
 ```
-## 4. Exploitation & Initial Access:
+
+---
+## 5. Exploitation & Initial Access:
 
 After authenticating to Nibbleblog, the report navigated to the **Plugins** area and identified the **My Image** plugin, which allowed the administrator to upload an image.
 
 This upload functionality formed the practical exploitation point for the known arbitrary file-upload vulnerability.
 ![](Attachments/Pasted%20image%2020260807224757.png)
 
+---
 ### Metasploit Exploitation:
 
 The Metasploit module was then configured with the target web path, valid application credentials, and a reverse connection listener.
@@ -123,30 +130,38 @@ The Metasploit module was then configured with the target web path, valid applic
 
 the shell was successfully acquired.
 
+---
 ## 5. Privilege Escalation:
+
+After obtaining a shell as `nibbler`, the next step was to enumerate the user's privileges.
 ### Check Sudo Permissions:
 
 run:
 ```
 sudo -l
 ```
-It lists **which commands the current user is allowed to run using `sudo`**.
+`sudo -l` displays commands that the current user is permitted to execute through `sudo`.
 
-The critical entry allowed the user to execute the following path as root:
+The output revealed that the user could execute a script located at:
+```
+/home/nibbler/personal/stuff/monitor.sh
+```
+with elevated privileges.
 ![](Attachments/Pasted%20image%2020260808182923.png)
 
 The home directory and observed that `monitor.sh` did not exist.:
 ![](Attachments/Pasted%20image%2020260808185839.png)
 
+---
 ### Create the Missing Script:
-
+he `monitor.sh` script was not initially present at the specified location.
 ![](Attachments/Pasted%20image%2020260808190102.png)
 
 `bash -i` the `-i` stands for **interactive**.
 
 It launches **an interactive Bash shell** where you can type commands and immediately receive responses.
 
-## 6. Root Access & Final Result:
+---
 ### Make the Script Executable:
 - **upgrade the permissions,** of the file as `-rwx`
 ```
@@ -164,6 +179,7 @@ sudo /home/nibbler/personal/stuff/monitor.sh
 
 successful privilege escalation from the `nibbler` account to root.
 
+---
 ## Risk Analysis:
 
 The overall risk is **Critical** because the vulnerabilities could be chained to gain complete control of the system.
@@ -174,6 +190,7 @@ The overall risk is **Critical** because the vulnerabilities could be chained to
 
 **Overall:** The attack path progressed from **web access → remote shell → root access**, resulting in complete system compromise.
 
+---
 ## Conclusion:
 
 The Nibbles assessment successfully demonstrated a complete compromise through web enumeration, credential discovery, exploitation of the Nibbleblog file-upload vulnerability, and an insecure sudo configuration.
