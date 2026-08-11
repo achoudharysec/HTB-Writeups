@@ -22,7 +22,6 @@ Responder is a **very easy** Windows machine that demonstrates how a **File Incl
 The target was scanned to identify open ports and running services.
 <img width="651" height="209" alt="image" src="https://github.com/user-attachments/assets/f95313c0-f66f-4735-b910-5b457572e14f" />
 
-
 | Port | State | Service | Version |
 |------|------|---------|---------|
 | 80 | Open | HTTP | Apache httpd 2.4.52 (Win64) OpenSSL/1.1.1m PHP/8.1.1 |
