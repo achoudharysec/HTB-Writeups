@@ -169,6 +169,8 @@ chmod +x monitor.sh ls -la
 ```
 ![](Attachments/Pasted%20image%2020260808190754.png)
 
+---
+## 7. Root access:
 ### Execute Through Sudo:
 
 execute the attacker-controlled script through the sudo rule:
