@@ -1,35 +1,47 @@
-**Target;** 10.10.10.75
-**Primary Service;** HTTP / Nibbleblog
-**Initial Access:** Authenticated arbitrary file upload → remote shell
-**Privilege Escalation:** Sudo misconfiguration → root shell
-**Report Status:** Completed / expanded from original notes
+# Hack The Box - Nibbels
+> **Machine:** Nibbels
+>
+> **Platform:** Hack The Box
+>
+> **Difficulty:** Easy
+>
+> **Target IP:** `10.10.10.75`
 
+---
 **Objective :** This version preserves the evidence and attack path from the uploaded report while adding clear explanations, methodology, findings, command context, and a concise
 lessons-learned section.
 
-
+---
 ## 1. Enumeration:
 ### nmap :
-![](../../../../z%20(Attachments)/Pasted%20image%2020260808193900.png)
-The results shown in the original report identify two relevant exposed services:
-
-- **22/tcp — SSH:** OpenSSH 7.2p2 on Ubuntu.
-- **80/tcp — HTTP:** Apache 2.4.18 (Ubuntu)
-
+An initial full-port Nmap scan was performed to identify exposed services.
 ```
 nmap -A -T4 -p- 10.10.10.75
 ```
 
-The important lesson is that enumeration should establish the attack surface before attempting exploitation.
+The scan identified two relevant services:
 
-Port 80 became the main focus because it exposed a web application, while SSH remained a potential later entry point.
-
+|Port|Service|Version|
+|---|---|---|
+|`22/tcp`|SSH|OpenSSH 7.2p2|
+|`80/tcp`|HTTP|Apache 2.4.18|
+![](../../../../z%20(Attachments)/Pasted%20image%2020260808193900.png)
+Port `80` became the primary focus because it exposed a web application.
+## 2. Website Enumeration:
 ### Website:
-Browsing to the HTTP service revealed a Nibbleblog-powered website titled **“Nibbles Yum yum”**.
-![618](../../../../z%20(Attachments)/Pasted%20image%2020260806230103.png)
-The initial page did not expose an obvious direct attack path, so the assessment moved from browsing to structured web-content enumeration.
 
-## 2. Web & Directory Enumeration:
+Navigating to:
+```
+http://10.10.10.75/
+```
+revealed a website running **Nibbleblog**.
+![618](../../../../z%20(Attachments)/Pasted%20image%2020260806230103.png)
+The page title identified the site as:
+> **Nibbles Yum yum**
+
+Since the web application was the primary attack surface, further content enumeration was performed.
+
+## 3. Web & Directory Enumeration:
 ### Searchsploit:
 
 [Searchsploit](../../../../tools/Exploitation/Searchsploit.md) to search the local Exploit Database index for known Nibbleblog vulnerabilities.
