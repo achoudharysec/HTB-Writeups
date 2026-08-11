@@ -26,7 +26,7 @@ The scan identified two relevant services:
 | `22/tcp` | SSH     | OpenSSH 7.2p2 |
 | `80/tcp` | HTTP    | Apache 2.4.18 |
 
-![](z(Asets)/Pasted%20image%2020260811172226.png)
+![](Attachments/Pasted%20image%2020260811172226.png)
 
 Port `80` became the primary focus because it exposed a web application.
 ## 2. Website Enumeration:
@@ -37,7 +37,7 @@ Navigating to:
 http://10.10.10.75/
 ```
 revealed a website running **Nibbleblog**.
-![618](../../../../z%20(Attachments)/Pasted%20image%2020260806230103.png)
+![618](Attachments/Pasted%20image%2020260806230103.png)
 The page title identified the site as:
 > **Nibbles Yum yum**
 
@@ -47,20 +47,20 @@ Since the web application was the primary attack surface, further content enumer
 ### Searchsploit:
 
 [Searchsploit](../../../../tools/Exploitation/Searchsploit.md) to search the local Exploit Database index for known Nibbleblog vulnerabilities.
-![](../../../../z%20(Attachments)/Pasted%20image%2020260807143347.png)
+![](Attachments/Pasted%20image%2020260807143347.png)
 found the `Arbitrary file uplo` in it with remote code execution.
 
 ### Metasploit Module Research:
 
 The corresponding [[../../../../tools/Exploitation/Metasploit]]module was located with a Nibbleblog search.
 
-![](../../../../z%20(Attachments)/Pasted%20image%2020260807154858.png)
+![](Attachments/Pasted%20image%2020260807154858.png)
 
 check the info:
 ```
 info
 ```
-![](../../../../z%20(Attachments)/Pasted%20image%2020260807155007.png)
+![](Attachments/Pasted%20image%2020260807155007.png)
 The module information indicated that the upload vulnerability is exploitable by an authenticated attacker.
 
 Therefore, the next objective was to locate the administrative login endpoint and obtain valid credentials.
@@ -81,7 +81,7 @@ The enumeration located the administrative login page:
 http://10.10.10.75/nibbleblog/admin.php
 ```
 
-![613](../../../../z%20(Attachments)/Pasted%20image%2020260807191416.png)
+![613](Attachments/Pasted%20image%2020260807191416.png)
 
 ## 3. Credential Discovery:
 
@@ -89,7 +89,7 @@ The discovered `admin.php` endpoint presented a Nibbleblog administration login.
 you can use [Brute force using burp-suit](../../../../Y%20(extra%20notes)/Brute%20force%20using%20burp-suit.md):
 
 -  the credentials were found-able in the content-page.
-![](../../../../z%20(Attachments)/Pasted%20image%2020260807194649.png)
+![](Attachments/Pasted%20image%2020260807194649.png)
 
 The report captured the following application information:
 ```
@@ -107,13 +107,13 @@ Password: nibbles
 After authenticating to Nibbleblog, the report navigated to the **Plugins** area and identified the **My Image** plugin, which allowed the administrator to upload an image.
 
 This upload functionality formed the practical exploitation point for the known arbitrary file-upload vulnerability.
-![](../../../../z%20(Attachments)/Pasted%20image%2020260807224757.png)
+![](Attachments/Pasted%20image%2020260807224757.png)
 
 ### Metasploit Exploitation:
 
 The Metasploit module was then configured with the target web path, valid application credentials, and a reverse connection listener.
 
-![](../../../../z%20(Attachments)/Pasted%20image%2020260807231503.png)
+![](Attachments/Pasted%20image%2020260807231503.png)
 the shell was successfully acquired.
 
 ## 5. Privilege Escalation:
@@ -126,14 +126,14 @@ sudo -l
 It lists **which commands the current user is allowed to run using `sudo`**.
 
 The critical entry allowed the user to execute the following path as root:
-![](../../../../z%20(Attachments)/Pasted%20image%2020260808182923.png)
+![](Attachments/Pasted%20image%2020260808182923.png)
 
 The home directory and observed that `monitor.sh` did not exist.:
-![](../../../../z%20(Attachments)/Pasted%20image%2020260808185839.png)
+![](Attachments/Pasted%20image%2020260808185839.png)
 
 ### Create the Missing Script:
 
-![](../../../../z%20(Attachments)/Pasted%20image%2020260808190102.png)
+![](Attachments/Pasted%20image%2020260808190102.png)
 `bash -i` the `-i` stands for **interactive**.
 
 It launches **an interactive Bash shell** where you can type commands and immediately receive responses.
@@ -144,7 +144,7 @@ It launches **an interactive Bash shell** where you can type commands and immedi
 ```
 chmod +x monitor.sh ls -la
 ```
-![](../../../../z%20(Attachments)/Pasted%20image%2020260808190754.png)
+![](Attachments/Pasted%20image%2020260808190754.png)
 
 ### Execute Through Sudo:
 
@@ -152,7 +152,7 @@ execute the attacker-controlled script through the sudo rule:
 ```
 sudo /home/nibbler/personal/stuff/monitor.sh
 ```
-![](../../../../z%20(Attachments)/Pasted%20image%2020260808191734.png)successful privilege escalation from the `nibbler` account to root.
+![](Attachments/Pasted%20image%2020260808191734.png)successful privilege escalation from the `nibbler` account to root.
 
 ## Risk Analysis:
 
