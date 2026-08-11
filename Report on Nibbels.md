@@ -147,6 +147,7 @@ The output revealed that the user could execute a script located at:
 /home/nibbler/personal/stuff/monitor.sh
 ```
 with elevated privileges.
+
 ![](Attachments/Pasted%20image%2020260808182923.png)
 
 The home directory and observed that `monitor.sh` did not exist.:
@@ -154,7 +155,9 @@ The home directory and observed that `monitor.sh` did not exist.:
 
 ---
 ### Create the Missing Script:
+
 he `monitor.sh` script was not initially present at the specified location.
+
 ![](Attachments/Pasted%20image%2020260808190102.png)
 
 `bash -i` the `-i` stands for **interactive**.
