@@ -131,7 +131,7 @@ The Metasploit module was then configured with the target web path, valid applic
 the shell was successfully acquired.
 
 ---
-## 5. Privilege Escalation:
+## 6. Privilege Escalation:
 
 After obtaining a shell as `nibbler`, the next step was to enumerate the user's privileges.
 ### Check Sudo Permissions:
