@@ -51,6 +51,7 @@ Since the web application was the primary attack surface, further content enumer
 
 [Searchsploit](../../../../tools/Exploitation/Searchsploit.md) to search the local Exploit Database index for known Nibbleblog vulnerabilities.
 ![](Attachments/Pasted%20image%2020260807143347.png)
+
 found the `Arbitrary file uplo` in it with remote code execution.
 
 ---
@@ -65,6 +66,7 @@ check the info:
 info
 ```
 ![](Attachments/Pasted%20image%2020260807155007.png)
+
 The module information indicated that the upload vulnerability is exploitable by an authenticated attacker.
 
 Therefore, the next objective was to locate the administrative login endpoint and obtain valid credentials.
@@ -118,6 +120,7 @@ This upload functionality formed the practical exploitation point for the known 
 The Metasploit module was then configured with the target web path, valid application credentials, and a reverse connection listener.
 
 ![](Attachments/Pasted%20image%2020260807231503.png)
+
 the shell was successfully acquired.
 
 ## 5. Privilege Escalation:
@@ -138,6 +141,7 @@ The home directory and observed that `monitor.sh` did not exist.:
 ### Create the Missing Script:
 
 ![](Attachments/Pasted%20image%2020260808190102.png)
+
 `bash -i` the `-i` stands for **interactive**.
 
 It launches **an interactive Bash shell** where you can type commands and immediately receive responses.
@@ -156,7 +160,9 @@ execute the attacker-controlled script through the sudo rule:
 ```
 sudo /home/nibbler/personal/stuff/monitor.sh
 ```
-![](Attachments/Pasted%20image%2020260808191734.png)successful privilege escalation from the `nibbler` account to root.
+![](Attachments/Pasted%20image%2020260808191734.png)
+
+successful privilege escalation from the `nibbler` account to root.
 
 ## Risk Analysis:
 
