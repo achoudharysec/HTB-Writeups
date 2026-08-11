@@ -25,6 +25,7 @@ The scan identified two relevant services:
 | -------- | ------- | ------------- |
 | `22/tcp` | SSH     | OpenSSH 7.2p2 |
 | `80/tcp` | HTTP    | Apache 2.4.18 |
+
 ![](z(Asets)/Pasted%20image%2020260811172226.png)
 
 Port `80` became the primary focus because it exposed a web application.
