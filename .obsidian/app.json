@@ -1,3 +1,6 @@
 {
-  "attachmentFolderPath": "Attachments"
+  "attachmentFolderPath": "z(Asets)",
+  "newLinkFormat": "relative",
+  "useMarkdownLinks": true,
+  "alwaysUpdateLinks": true
 }
