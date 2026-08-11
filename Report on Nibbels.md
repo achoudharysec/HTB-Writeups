@@ -29,6 +29,8 @@ The scan identified two relevant services:
 ![](Attachments/Pasted%20image%2020260811172226.png)
 
 Port `80` became the primary focus because it exposed a web application.
+
+---
 ## 2. Website Enumeration:
 ### Website:
 
@@ -43,6 +45,7 @@ The page title identified the site as:
 
 Since the web application was the primary attack surface, further content enumeration was performed.
 
+---
 ## 3. Web & Directory Enumeration:
 ### Searchsploit:
 
