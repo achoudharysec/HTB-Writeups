@@ -21,7 +21,7 @@ nmap -A -T4 -p- 10.10.10.68
 
 | Port | State | Service | Version                        |
 | ---- | ----- | ------- | ------------------------------ |
-| 80   | tcp   | open    | Apache httpd 2.4.18 ((Ubuntu)) |
+| 80   | open  | tcp     | Apache httpd 2.4.18 ((Ubuntu)) |
 
 ---
 ### SearchSploit:
