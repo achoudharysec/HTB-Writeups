@@ -70,6 +70,7 @@ The current account was effectively the web-server user:
 www-data
 ```
 filesystem could also be explored through the terminal.
+
 ![](Attachments/Pasted%20image%2020260810232557.png)
 
 The original evidence showed access to the `/home` directory and the users:
@@ -108,6 +109,7 @@ To obtain a more practical shell, a PHP reverse shell was used.
 - Download the file.
 	[php-reverse-shell-1.0.tar.gz](http://pentestmonkey.net/tools/php-reverse-shell/php-reverse-shell-1.0.tar.gz)
 The reverse-shell file was configured with the attacker's IP address and port
+
 ![200](Attachments/Pasted%20image%2020260811131026.png)
 
 A temporary HTTP server was started to host the file:
@@ -138,12 +140,14 @@ www-data
 ```
 
 ![](Attachments/Pasted%20image%2020260812000205.png)
+
 successfully got the shell but still the same problem of no tty present.
 
 ---
 ## 6. Shell Stabilization:
 
 The reverse shell was functional but had no proper TTY.
+
 ![](Attachments/Pasted%20image%2020260812155837.png)
 
 Search `tty escape` into the google :(https://wiki.zacheller.dev/pentest/privilege-escalation/spawning-a-tty-shell)
@@ -154,6 +158,7 @@ python -c 'import pty; pty.spawn("/bin/bash")'
 ```
 
 ![](Attachments/Pasted%20image%2020260812013453.png)
+
 succesfully the shell was improved.
 
 ---
@@ -193,6 +198,7 @@ Inside the directory was:
 test.py
 ```
 ![](Attachments/Pasted%20image%2020260812130938.png)
+
 The important observation was that **a script in this directory could be modified by the `scriptmanager` user**.
 
 ---
