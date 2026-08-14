@@ -7,19 +7,6 @@
 >**Architecture:** x64
 
 ---
-## Execution Summary
-
-The **Optimum** machine was compromised through a vulnerable **HttpFileServer (HFS) 2.3** service running on port 80. After identifying the service, the **Rejetto HFS remote code execution exploit** was used through Metasploit to obtain a low-privileged Meterpreter session.
-
-Privilege escalation was then investigated using **Local Exploit Suggester, Sherlock, and WES-NG**. Although the initial **MS16-032** attempt failed, WES-NG identified **MS16-098** as a viable vulnerability. Exploiting MS16-098 successfully elevated the session to:
-
-```
-NT AUTHORITY\SYSTEM
-```
-
-This confirmed **complete system-level compromise** of the Windows Server 2012 R2 target.
-
----
 ## 1. Enumeration:
 ### 1.1 Nmap Scan:
 
